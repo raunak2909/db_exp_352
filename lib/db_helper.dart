@@ -10,6 +10,11 @@ class DbHelper{
   DbHelper._();
   //static final DbHelper mInstance = DbHelper._();
   static DbHelper getInstance() => DbHelper._();
+  static const String TABLE_NOTE = 'notes';
+  static const String COLUMN_NOTE_ID = 'nId';
+  static const String COLUMN_NOTE_TITLE = 'nTitle';
+  static const String COLUMN_NOTE_DESC = 'nDesc';
+  static const String COLUMN_NOTE_CREATED_AT = 'nCreatedAt';
 
   /// DB will only be created once, it will be destroyed only when user clear the cache data or uninstall the app.
 
@@ -35,9 +40,9 @@ class DbHelper{
     Directory appDocDir = await getApplicationDocumentsDirectory();
     String dbPath = join(appDocDir.path,"noteDB.db");
 
-    return await openDatabase(dbPath, onCreate: (db, version){
+    return await openDatabase(dbPath, version: 1, onCreate: (db, version){
       ///create tables
-      db.execute("Create table notes ( nId integer primary key auto increment, nTitle text, nDesc text, nCreatedAt text)");
+      db.execute("Create table $TABLE_NOTE ( $COLUMN_NOTE_ID integer primary key auto increment, $COLUMN_NOTE_TITLE text, $COLUMN_NOTE_DESC text, $COLUMN_NOTE_CREATED_AT text)");
 
     });
 
@@ -53,9 +58,27 @@ class DbHelper{
   /// fetch -> db -> execute
   /// fetch -> db -> execute
   
-  void insertNote({required String title, required String desc}) async{
+  Future<bool> addNote({required String title, required String desc}) async{
+    Database db = await getDB();
+
+    int rowsEffected = await db.insert(TABLE_NOTE, {
+        COLUMN_NOTE_TITLE : title,
+        COLUMN_NOTE_DESC : desc,
+        COLUMN_NOTE_CREATED_AT: DateTime.now().millisecondsSinceEpoch.toString(),
+    });
+
+    return rowsEffected>0;
+
+  }
+
+  Future<List<Map<String, dynamic>>> fetchAllNotes() async{
     var db = await getDB();
 
+    List<Map<String, dynamic>> mNotes = await db.query(TABLE_NOTE);
+
+    /// select * from $TABLE_NOTE
+
+    return mNotes;
   }
 
 }
