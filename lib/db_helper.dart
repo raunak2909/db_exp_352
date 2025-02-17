@@ -42,7 +42,7 @@ class DbHelper{
 
     return await openDatabase(dbPath, version: 1, onCreate: (db, version){
       ///create tables
-      db.execute("Create table $TABLE_NOTE ( $COLUMN_NOTE_ID integer primary key auto increment, $COLUMN_NOTE_TITLE text, $COLUMN_NOTE_DESC text, $COLUMN_NOTE_CREATED_AT text)");
+      db.execute("Create table $TABLE_NOTE ( $COLUMN_NOTE_ID integer primary key autoincrement, $COLUMN_NOTE_TITLE text, $COLUMN_NOTE_DESC text, $COLUMN_NOTE_CREATED_AT text)");
 
     });
 
