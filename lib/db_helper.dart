@@ -4,10 +4,13 @@ import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
-class DbHelper{
+import 'note_model.dart';
+
+class DbHelper {
   /// make this class constructor private
   ///private constructor
   DbHelper._();
+
   //static final DbHelper mInstance = DbHelper._();
   static DbHelper getInstance() => DbHelper._();
   static const String TABLE_NOTE = 'notes';
@@ -23,7 +26,7 @@ class DbHelper{
   /// if it does not exist we will create it and then open it
   Database? _db;
 
-  Future<Database> getDB() async{
+  Future<Database> getDB() async {
     _db ??= await openDB();
     return _db!;
 
@@ -35,17 +38,15 @@ class DbHelper{
     }*/
   }
 
-  Future<Database> openDB() async{
-
+  Future<Database> openDB() async {
     Directory appDocDir = await getApplicationDocumentsDirectory();
-    String dbPath = join(appDocDir.path,"noteDB.db");
+    String dbPath = join(appDocDir.path, "noteDB.db");
 
-    return await openDatabase(dbPath, version: 1, onCreate: (db, version){
+    return await openDatabase(dbPath, version: 1, onCreate: (db, version) {
       ///create tables
-      db.execute("Create table $TABLE_NOTE ( $COLUMN_NOTE_ID integer primary key autoincrement, $COLUMN_NOTE_TITLE text, $COLUMN_NOTE_DESC text, $COLUMN_NOTE_CREATED_AT text)");
-
+      db.execute(
+          "Create table $TABLE_NOTE ( $COLUMN_NOTE_ID integer primary key autoincrement, $COLUMN_NOTE_TITLE text, $COLUMN_NOTE_DESC text, $COLUMN_NOTE_CREATED_AT text)");
     });
-
   }
 
   /// if i'm calling to execute queries on DB from our app like 10 times
@@ -57,28 +58,46 @@ class DbHelper{
   /// fetch -> db -> execute
   /// fetch -> db -> execute
   /// fetch -> db -> execute
-  
-  Future<bool> addNote({required String title, required String desc}) async{
+
+  Future<bool> addNote({required NoteModel newNote}) async {
     Database db = await getDB();
 
-    int rowsEffected = await db.insert(TABLE_NOTE, {
-        COLUMN_NOTE_TITLE : title,
-        COLUMN_NOTE_DESC : desc,
-        COLUMN_NOTE_CREATED_AT: DateTime.now().millisecondsSinceEpoch.toString(),
-    });
+    int rowsEffected = await db.insert(TABLE_NOTE, newNote.toMap());
 
-    return rowsEffected>0;
-
+    return rowsEffected > 0;
   }
 
-  Future<List<Map<String, dynamic>>> fetchAllNotes() async{
+  Future<List<NoteModel>> fetchAllNotes() async {
     var db = await getDB();
 
     List<Map<String, dynamic>> mNotes = await db.query(TABLE_NOTE);
 
     /// select * from $TABLE_NOTE
 
-    return mNotes;
+    List<NoteModel> allNotes = [];
+
+    for (Map<String, dynamic> eachNote in mNotes) {
+      allNotes.add(NoteModel.fromMap(eachNote));
+    }
+
+    return allNotes;
   }
 
+  Future<bool> updateNote(NoteModel updatedNote) async {
+    var db = await getDB();
+
+    int rowsEffected = await db.update(TABLE_NOTE, updatedNote.toMap(),
+        where: "$COLUMN_NOTE_ID = ?", whereArgs: ["${updatedNote.nId}"]);
+
+    return rowsEffected>0;
+  }
+
+  Future<bool> deleteNote(int id) async{
+
+    var db =  await getDB();
+
+    int rowsEffected = await db.delete(TABLE_NOTE, where: "$COLUMN_NOTE_ID = $id");
+
+    return rowsEffected>0;
+  }
 }

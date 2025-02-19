@@ -1,5 +1,7 @@
 import 'package:db_exp_352/db_helper.dart';
+import 'package:db_exp_352/note_model.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -11,108 +13,174 @@ class _HomePageState extends State<HomePage> {
   TextEditingController descController = TextEditingController();
   DbHelper? mDb;
 
-  List<Map<String, dynamic>> mData = [];
+  DateFormat df = DateFormat.yMMMEd();
 
+  List<NoteModel> mData = [];
 
   @override
-  void initState(){
+  void initState() {
     super.initState();
     mDb = DbHelper.getInstance();
     getAllNotes();
   }
 
-  void getAllNotes() async{
+  void getAllNotes() async {
     mData = await mDb!.fetchAllNotes();
-    setState(() {
-
-    });
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
-
     ///DbHelper dbHelper = DbHelper();
-
 
     return Scaffold(
       appBar: AppBar(
         title: Text('Home'),
       ),
+      body: mData.isNotEmpty
+          ? ListView.builder(
+              itemCount: mData.length,
+              itemBuilder: (_, index) {
+                var eachDate = DateTime.fromMillisecondsSinceEpoch(
+                    int.parse(mData[index].nCreatedAt));
 
-      body: mData.isNotEmpty ? ListView.builder(
-        itemCount: mData.length,
-          itemBuilder: (_, index){
-          return ListTile(
-            title: Text(mData[index][DbHelper.COLUMN_NOTE_TITLE]),
-            subtitle: Text(mData[index][DbHelper.COLUMN_NOTE_DESC]),
-          );
-      }) : Center( child: Text("No notes yet!!"),),
-      floatingActionButton: FloatingActionButton(onPressed: () async{
-
-        titleController.clear();
-        descController.clear();
-
-        showModalBottomSheet(context: context, builder: (_){
-          return Container(
-            padding: EdgeInsets.all(11),
-            color: Colors.white,
-            width: double.infinity,
-            child: Column(
-              children: [
-                Text("Add Note", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 21),),
-                SizedBox(
-                  height: 11,
-                ),
-                TextField(
-                  controller: titleController,
-                  decoration: InputDecoration(
-                    label: Text("Title"),
-                    hintText: "Enter title here..",
-                    focusedBorder: OutlineInputBorder(),
-                    enabledBorder: OutlineInputBorder(),
+                return ListTile(
+                  title: Text(mData[index].nTitle),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(mData[index].nDesc),
+                      Text(df.format(eachDate)),
+                    ],
                   ),
-                ),
-                SizedBox(
-                  height: 11,
-                ),
-                TextField(
-                  controller: descController,
-                  decoration: InputDecoration(
-                    label: Text("Desc"),
-                    hintText: "Enter desc here..",
-                    focusedBorder: OutlineInputBorder(),
-                    enabledBorder: OutlineInputBorder(),
-                  ),
-                ),
-                SizedBox(
-                  height: 11,
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    OutlinedButton(onPressed: () async{
-                      bool check = await mDb!.addNote(title: titleController.text, desc: descController.text);
+                  trailing: SizedBox(
+                    width: 100,
+                    child: Row(
+                      children: [
+                        IconButton(
+                            onPressed: () async{
+                              bool check = await mDb!.updateNote(NoteModel(
+                                  nTitle: "Updated Title",
+                                  nDesc: "Updated Desc",
+                                  nCreatedAt: mData[index].nCreatedAt,
+                                  nId: mData[index].nId));
 
-                      if(check){
-                        getAllNotes();
-                        Navigator.pop(context);
-                      }
+                              if(check){
+                                getAllNotes();
+                              }
 
-                    }, child: Text('Add')),
-                    SizedBox(
-                      width: 11,
+                            },
+                            icon: Icon(
+                              Icons.edit,
+                            )),
+                        IconButton(
+                            onPressed: () async{
+
+                              bool check = await mDb!.deleteNote(mData[index].nId!);
+
+                              if(check){
+                                getAllNotes();
+                              }
+                            },
+                            icon: Icon(
+                              Icons.delete,
+                              color: Colors.red,
+                            )),
+                      ],
                     ),
-                    OutlinedButton(onPressed: (){
-
-                    }, child: Text("Cancel")),
-                  ],
-                )
-              ],
+                  ),
+                );
+              })
+          : Center(
+              child: Text("No notes yet!!"),
             ),
-          );
-        });
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          titleController.text = "Default";
+          descController.clear();
 
-      }, child: Icon(Icons.add),),
+          showModalBottomSheet(
+              context: context,
+              builder: (_) {
+                return Container(
+                  padding: EdgeInsets.all(11),
+                  color: Colors.white,
+                  width: double.infinity,
+                  child: Column(
+                    children: [
+                      Text(
+                        "Add Note",
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 21),
+                      ),
+                      SizedBox(
+                        height: 11,
+                      ),
+                      TextField(
+                        controller: titleController,
+                        decoration: InputDecoration(
+                          label: Text("Title"),
+                          hintText: "Enter title here..",
+                          focusedBorder: OutlineInputBorder(),
+                          enabledBorder: OutlineInputBorder(),
+                        ),
+                      ),
+                      SizedBox(
+                        height: 11,
+                      ),
+                      TextField(
+                        controller: descController,
+                        decoration: InputDecoration(
+                          label: Text("Desc"),
+                          hintText: "Enter desc here..",
+                          focusedBorder: OutlineInputBorder(),
+                          enabledBorder: OutlineInputBorder(),
+                        ),
+                      ),
+                      SizedBox(
+                        height: 11,
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          OutlinedButton(
+                              onPressed: () async {
+
+                                if(titleController.text.isNotEmpty && descController.text.isNotEmpty) {
+                                  bool check = await mDb!.addNote(
+                                      newNote: NoteModel(
+                                          nTitle: titleController.text,
+                                          nDesc: descController.text,
+                                          nCreatedAt: DateTime
+                                              .now()
+                                              .millisecondsSinceEpoch
+                                              .toString()));
+
+                                  if (check) {
+                                    getAllNotes();
+                                    Navigator.pop(context);
+                                  }
+                                } else {
+
+                                }
+                              },
+                              child: Text('Add')),
+                          SizedBox(
+                            width: 11,
+                          ),
+                          OutlinedButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                              }, child: Text("Cancel")),
+                        ],
+                      )
+                    ],
+                  ),
+                );
+              });
+        },
+        child: Icon(Icons.add),
+      ),
     );
   }
 }
