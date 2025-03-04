@@ -1,5 +1,8 @@
+import 'package:db_exp_352/db_helper.dart';
+import 'package:db_exp_352/db_provider.dart';
 import 'package:db_exp_352/home_page.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 void main() {
   runApp(const MyApp());
@@ -17,7 +20,10 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: HomePage(),
+      home: ChangeNotifierProvider(
+        create: (context) => DBProvider(dbHelper: DbHelper.getInstance()),
+        child: HomePage(),
+      ),
     );
   }
 }

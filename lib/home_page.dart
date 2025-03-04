@@ -1,7 +1,11 @@
+import 'dart:math';
+
 import 'package:db_exp_352/db_helper.dart';
+import 'package:db_exp_352/db_provider.dart';
 import 'package:db_exp_352/note_model.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -11,7 +15,6 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   TextEditingController titleController = TextEditingController();
   TextEditingController descController = TextEditingController();
-  DbHelper? mDb;
 
   DateFormat df = DateFormat.yMMMEd();
 
@@ -20,14 +23,15 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    mDb = DbHelper.getInstance();
-    getAllNotes();
+    context.read<DBProvider>().getInitialNotes();
+    /*mDb = DbHelper.getInstance();
+    getAllNotes();*/
   }
 
-  void getAllNotes() async {
+  /*void getAllNotes() async {
     mData = await mDb!.fetchAllNotes();
     setState(() {});
-  }
+  }*/
 
   @override
   Widget build(BuildContext context) {
@@ -37,63 +41,77 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: Text('Home'),
       ),
-      body: mData.isNotEmpty
-          ? ListView.builder(
-              itemCount: mData.length,
-              itemBuilder: (_, index) {
-                var eachDate = DateTime.fromMillisecondsSinceEpoch(
-                    int.parse(mData[index].nCreatedAt));
+      body: Consumer<DBProvider>(builder: (_, provider, __){
+        mData = provider.getAllNotes();
+        return mData.isNotEmpty
+            ? ListView.builder(
+            itemCount: mData.length,
+            itemBuilder: (_, index) {
+              var eachDate = DateTime.fromMillisecondsSinceEpoch(
+                  int.parse(mData[index].nCreatedAt));
 
-                return ListTile(
-                  title: Text(mData[index].nTitle),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+              return ListTile(
+                tileColor: Colors.primaries[Random().nextInt(Colors.primaries.length)],
+                title: Text(mData[index].nTitle, style: TextStyle(
+                  decoration: TextDecoration.lineThrough
+                ),),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(mData[index].nDesc),
+                    Text(df.format(eachDate)),
+                  ],
+                ),
+                trailing: SizedBox(
+                  width: 100,
+                  child: Row(
                     children: [
-                      Text(mData[index].nDesc),
-                      Text(df.format(eachDate)),
+                      IconButton(
+                          onPressed: () async{
+                            context.read<DBProvider>().updateNote(NoteModel(
+                                nTitle: mData[index].nTitle,
+                                nDesc: "Updated Desc",
+                                nCreatedAt: mData[index].nCreatedAt,
+                                nId: mData[index].nId));
+
+                            /*bool check = await mDb!.updateNote(NoteModel(
+                                nTitle: mData[index].nTitle,
+                                nDesc: "Updated Desc",
+                                nCreatedAt: mData[index].nCreatedAt,
+                                nId: mData[index].nId));
+
+                            if(check){
+                              getAllNotes();
+                            }*/
+
+                          },
+                          icon: Icon(
+                            Icons.edit,
+                          )),
+                      IconButton(
+                          onPressed: () async{
+
+                            context.read<DBProvider>().deleteNote(mData[index].nId!);
+
+                            /*bool check = await mDb!.deleteNote(mData[index].nId!);
+
+                            if(check){
+                              getAllNotes();
+                            }*/
+                          },
+                          icon: Icon(
+                            Icons.delete,
+                            color: Colors.red,
+                          )),
                     ],
                   ),
-                  trailing: SizedBox(
-                    width: 100,
-                    child: Row(
-                      children: [
-                        IconButton(
-                            onPressed: () async{
-                              bool check = await mDb!.updateNote(NoteModel(
-                                  nTitle: "Updated Title",
-                                  nDesc: "Updated Desc",
-                                  nCreatedAt: mData[index].nCreatedAt,
-                                  nId: mData[index].nId));
-
-                              if(check){
-                                getAllNotes();
-                              }
-
-                            },
-                            icon: Icon(
-                              Icons.edit,
-                            )),
-                        IconButton(
-                            onPressed: () async{
-
-                              bool check = await mDb!.deleteNote(mData[index].nId!);
-
-                              if(check){
-                                getAllNotes();
-                              }
-                            },
-                            icon: Icon(
-                              Icons.delete,
-                              color: Colors.red,
-                            )),
-                      ],
-                    ),
-                  ),
-                );
-              })
-          : Center(
-              child: Text("No notes yet!!"),
-            ),
+                ),
+              );
+            })
+            : Center(
+          child: Text("No notes yet!!"),
+        );
+      }),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           titleController.text = "Default";
@@ -147,7 +165,18 @@ class _HomePageState extends State<HomePage> {
                               onPressed: () async {
 
                                 if(titleController.text.isNotEmpty && descController.text.isNotEmpty) {
-                                  bool check = await mDb!.addNote(
+
+                                  context.read<DBProvider>().addNote(NoteModel(
+                                      nTitle: titleController.text,
+                                      nDesc: descController.text,
+                                      nCreatedAt: DateTime
+                                          .now()
+                                          .millisecondsSinceEpoch
+                                          .toString()));
+
+                                  Navigator.pop(context);
+
+                                  /*bool check = await mDb!.addNote(
                                       newNote: NoteModel(
                                           nTitle: titleController.text,
                                           nDesc: descController.text,
@@ -159,7 +188,7 @@ class _HomePageState extends State<HomePage> {
                                   if (check) {
                                     getAllNotes();
                                     Navigator.pop(context);
-                                  }
+                                  }*/
                                 } else {
 
                                 }

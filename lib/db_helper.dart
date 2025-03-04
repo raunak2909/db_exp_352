@@ -59,6 +59,7 @@ class DbHelper {
   /// fetch -> db -> execute
   /// fetch -> db -> execute
 
+  ///CRUD on Note
   Future<bool> addNote({required NoteModel newNote}) async {
     Database db = await getDB();
 
@@ -100,4 +101,48 @@ class DbHelper {
 
     return rowsEffected>0;
   }
+
+
+ /* ///CRUD on todo
+  Future<bool> addTodo({required NoteModel newNote}) async {
+    Database db = await getDB();
+
+    int rowsEffected = await db.insert(TABLE_NOTE, newNote.toMap());
+
+    return rowsEffected > 0;
+  }
+
+  Future<List<NoteModel>> fetchAllNotes() async {
+    var db = await getDB();
+
+    List<Map<String, dynamic>> mNotes = await db.query(TABLE_NOTE);
+
+    /// select * from $TABLE_NOTE
+
+    List<NoteModel> allNotes = [];
+
+    for (Map<String, dynamic> eachNote in mNotes) {
+      allNotes.add(NoteModel.fromMap(eachNote));
+    }
+
+    return allNotes;
+  }
+
+  Future<bool> updateNote(NoteModel updatedNote) async {
+    var db = await getDB();
+
+    int rowsEffected = await db.update(TABLE_NOTE, updatedNote.toMap(),
+        where: "$COLUMN_NOTE_ID = ?", whereArgs: ["${updatedNote.nId}"]);
+
+    return rowsEffected>0;
+  }
+
+  Future<bool> deleteNote(int id) async{
+
+    var db =  await getDB();
+
+    int rowsEffected = await db.delete(TABLE_NOTE, where: "$COLUMN_NOTE_ID = $id");
+
+    return rowsEffected>0;
+  }*/
 }
